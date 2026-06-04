@@ -14,8 +14,8 @@
 
 #### model
 
-- [ ] Lantern 모델 생성(Beanine Document)
-- [ ] all_models에 Lantern 추가
+- [x] Lantern 모델 생성(Beanie Document)
+- [x] all_models에 Lantern 추가
 
 #### schemas
 
