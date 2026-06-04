@@ -33,11 +33,54 @@ async def test_create_lantern_missing_name(client):
 
 
 @pytest.mark.asyncio
-async def test_create_lantern_wrong_image_count(client, tmp_path, monkeypatch):
-    monkeypatch.setattr("app.services.lantern.UPLOAD_DIR", tmp_path)
+async def test_create_lantern_empty_name(client):
+    res = await client.post(
+        "/api/v1/lanterns",
+        files=make_images(3),
+        data={"name": ""},
+    )
+    assert res.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_create_lantern_wrong_image_count(client):
     res = await client.post(
         "/api/v1/lanterns",
         files=make_images(2),
+        data={"name": "테스트"},
+    )
+    assert res.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_create_lantern_too_many_images(client):
+    res = await client.post(
+        "/api/v1/lanterns",
+        files=make_images(4),
+        data={"name": "테스트"},
+    )
+    assert res.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_create_lantern_no_images(client):
+    res = await client.post(
+        "/api/v1/lanterns",
+        data={"name": "테스트"},
+    )
+    assert res.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_create_lantern_non_image_file(client):
+    files = [
+        ("images", ("doc.txt", io.BytesIO(b"text"), "text/plain")),
+        ("images", ("b.jpg",   io.BytesIO(b"fake"), "image/jpeg")),
+        ("images", ("c.jpg",   io.BytesIO(b"fake"), "image/jpeg")),
+    ]
+    res = await client.post(
+        "/api/v1/lanterns",
+        files=files,
         data={"name": "테스트"},
     )
     assert res.status_code == 422

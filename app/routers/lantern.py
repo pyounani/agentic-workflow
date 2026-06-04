@@ -15,6 +15,9 @@ async def post_lantern(
 ) -> LanternCreateResponse:
     if len(images) != 3:
         raise ValidationException("Exactly 3 images are required")
+    for image in images:
+        if not image.content_type or not image.content_type.startswith("image/"):
+            raise ValidationException(f"File '{image.filename}' is not an image")
     response = await create_lantern(name, images)
     background_tasks.add_task(process_mood_analysis, response.lantern_code)
     return response
