@@ -53,3 +53,6 @@ docker compose up --build        # API + MongoDB 동시 기동
 테스트 DB는 `mongomock-motor`로 모킹 (`tests/conftest.py`).
 `patch("app.main.init_db", mock_init_db)`로 lifespan의 실제 MongoDB 연결을 교체.
 새 도메인 테스트 파일: `tests/test_{domain}.py`.
+
+## Language
+모든 응답은 한국어로 작성한다.
