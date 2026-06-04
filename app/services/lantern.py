@@ -18,7 +18,8 @@ async def create_lantern(name: str, images: list[UploadFile]) -> LanternCreateRe
 
     image_paths: list[str] = []
     for image in images:
-        file_path = dir_path / (image.filename or f"{len(image_paths)}.jpg")
+        safe_name = Path(image.filename).name if image.filename else f"{len(image_paths)}.jpg"
+        file_path = dir_path / safe_name
         file_path.write_bytes(await image.read())
         image_paths.append(str(file_path))
 
