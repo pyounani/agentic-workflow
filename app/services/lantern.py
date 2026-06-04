@@ -1,3 +1,4 @@
+import asyncio
 from pathlib import Path
 from uuid import uuid4
 
@@ -20,7 +21,8 @@ async def create_lantern(name: str, images: list[UploadFile]) -> LanternCreateRe
     for image in images:
         safe_name = Path(image.filename).name if image.filename else f"{len(image_paths)}.jpg"
         file_path = dir_path / safe_name
-        file_path.write_bytes(await image.read())
+        content = await image.read()
+        await asyncio.to_thread(file_path.write_bytes, content)
         image_paths.append(str(file_path))
 
     lantern = Lantern(
