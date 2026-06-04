@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 
-from app.models.lantern import LanternStatus
+from app.enums import LanternStatus
 
 
 class LanternCreateResponse(BaseModel):
