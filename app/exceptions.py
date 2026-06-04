@@ -13,6 +13,11 @@ class ConflictException(HTTPException):
         super().__init__(status_code=409, detail=detail)
 
 
+class ValidationException(HTTPException):
+    def __init__(self, detail: str = "Validation error"):
+        super().__init__(status_code=422, detail=detail)
+
+
 async def _http_exception_handler(request: Request, exc: HTTPException) -> JSONResponse:
     return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
 

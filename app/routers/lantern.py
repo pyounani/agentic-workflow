@@ -1,5 +1,6 @@
-from fastapi import APIRouter, BackgroundTasks, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, BackgroundTasks, File, Form, UploadFile
 
+from app.exceptions import ValidationException
 from app.schemas.lantern import LanternCreateResponse
 from app.services.lantern import create_lantern, process_mood_analysis
 
@@ -13,7 +14,7 @@ async def post_lantern(
     images: list[UploadFile] = File(...),
 ) -> LanternCreateResponse:
     if len(images) != 3:
-        raise HTTPException(status_code=422, detail="Exactly 3 images are required")
+        raise ValidationException("Exactly 3 images are required")
     response = await create_lantern(name, images)
     background_tasks.add_task(process_mood_analysis, response.lantern_code)
     return response

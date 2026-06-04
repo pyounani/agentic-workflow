@@ -1,4 +1,5 @@
 import asyncio
+import shutil
 from pathlib import Path
 from uuid import uuid4
 
@@ -9,7 +10,7 @@ from app.enums import LanternStatus
 from app.models.lantern import Lantern
 from app.schemas.lantern import LanternCreateResponse
 
-UPLOAD_DIR = Path("uploads/lanterns")
+UPLOAD_DIR = Path(__file__).parent.parent.parent / "uploads" / "lanterns"
 
 
 async def create_lantern(name: str, images: list[UploadFile]) -> LanternCreateResponse:
@@ -17,13 +18,17 @@ async def create_lantern(name: str, images: list[UploadFile]) -> LanternCreateRe
     dir_path = UPLOAD_DIR / lantern_code
     dir_path.mkdir(parents=True, exist_ok=True)
 
-    image_paths: list[str] = []
-    for image in images:
-        safe_name = Path(image.filename).name if image.filename else f"{len(image_paths)}.jpg"
-        file_path = dir_path / safe_name
-        content = await image.read()
-        await asyncio.to_thread(file_path.write_bytes, content)
-        image_paths.append(str(file_path))
+    try:
+        image_paths: list[str] = []
+        for i, image in enumerate(images):
+            safe_name = f"{i}_{Path(image.filename).name}" if image.filename else f"{i}.jpg"
+            file_path = dir_path / safe_name
+            content = await image.read()
+            await asyncio.to_thread(file_path.write_bytes, content)
+            image_paths.append(str(file_path))
+    except Exception:
+        await asyncio.to_thread(shutil.rmtree, dir_path, True)
+        raise
 
     lantern = Lantern(
         lantern_code=lantern_code,
