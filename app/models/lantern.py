@@ -1,4 +1,3 @@
-import enum
 import uuid
 from datetime import UTC, datetime
 from typing import Annotated, Optional
@@ -7,10 +6,7 @@ from beanie import Document
 from pydantic import Field
 from pymongo import ASCENDING, IndexModel
 
-
-class LanternStatus(str, enum.Enum):
-    PENDING = "pending"
-    COMPLETED = "completed"
+from app.enums import LanternStatus
 
 
 class Lantern(Document):
