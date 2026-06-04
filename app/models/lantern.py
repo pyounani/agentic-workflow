@@ -15,7 +15,7 @@ class LanternStatus(str, enum.Enum):
 
 class Lantern(Document):
     lantern_code: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    name: str
+    name: str = Field(min_length=1)
     image_paths: Annotated[list[str], Field(min_length=3, max_length=3)]
     background_music: Optional[str] = None
     status: LanternStatus = LanternStatus.PENDING
