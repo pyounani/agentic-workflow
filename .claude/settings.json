@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit|Bash|PowerShell",
+        "hooks": [{ "type": "command", "command": "uv run python scripts/log_agent_action.py" }]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit|Bash|PowerShell",
+        "hooks": [{ "type": "command", "command": "uv run python scripts/log_agent_action.py" }]
+      }
+    ]
+  }
+}
