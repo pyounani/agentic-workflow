@@ -20,6 +20,9 @@ celery_app.conf.update(
     accept_content=["json"],
     task_acks_late=True,
     worker_prefetch_multiplier=1,
+    task_reject_on_worker_lost=True,
+    worker_max_tasks_per_child=50,
+    result_expires=300,
 )
 
 _loop: asyncio.AbstractEventLoop | None = None
