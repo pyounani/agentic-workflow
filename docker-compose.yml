@@ -1,11 +1,27 @@
 services:
   api:
     build: .
+    restart: unless-stopped
     ports:
       - "8000:8000"
     env_file: .env
     depends_on:
       mongo:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  worker:
+    build: .
+    restart: unless-stopped
+    command: >
+      uv run celery -A app.celery_app.celery_app worker
+      --loglevel=info --concurrency=1 -Q celery
+    env_file: .env
+    depends_on:
+      mongo:
+        condition: service_healthy
+      redis:
         condition: service_healthy
 
   mongo:
@@ -20,6 +36,17 @@ services:
       timeout: 5s
       retries: 5
       start_period: 10s
+
+  redis:
+    image: redis:7-alpine
+    command: redis-server --maxmemory 128mb --maxmemory-policy volatile-lru
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
 
 volumes:
   mongo_data:

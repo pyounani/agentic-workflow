@@ -10,6 +10,8 @@ def make_images(n=3):
 @pytest.mark.asyncio
 async def test_create_lantern_success(client, tmp_path, monkeypatch):
     monkeypatch.setattr("app.services.lantern.UPLOAD_DIR", tmp_path)
+    dispatched = []
+    monkeypatch.setattr("app.routers.lantern.dispatch_pipeline", lambda code: dispatched.append(code))
     res = await client.post(
         "/api/v1/lanterns",
         files=make_images(3),
@@ -20,6 +22,7 @@ async def test_create_lantern_success(client, tmp_path, monkeypatch):
     assert data["name"] == "소원 랜턴"
     assert data["status"] == "pending"
     assert "lantern_code" in data
+    assert dispatched == [data["lantern_code"]]
 
 
 @pytest.mark.asyncio
@@ -89,7 +92,6 @@ async def test_create_lantern_non_image_file(client):
 @pytest.mark.asyncio
 async def test_get_lantern_success(client, tmp_path, monkeypatch):
     monkeypatch.setattr("app.services.lantern.UPLOAD_DIR", tmp_path)
-    monkeypatch.setattr("app.routers.lantern.process_mood_analysis", lambda code: None)
     create_res = await client.post(
         "/api/v1/lanterns",
         files=make_images(3),
@@ -117,7 +119,6 @@ async def test_get_lantern_not_found(client):
 @pytest.mark.asyncio
 async def test_get_random_list_success(client, tmp_path, monkeypatch):
     monkeypatch.setattr("app.services.lantern.UPLOAD_DIR", tmp_path)
-    monkeypatch.setattr("app.routers.lantern.process_mood_analysis", lambda code: None)
 
     res = await client.post("/api/v1/lanterns", files=make_images(3), data={"name": "내 랜턴"})
     assert res.status_code == 201
@@ -142,7 +143,6 @@ async def test_get_random_list_success(client, tmp_path, monkeypatch):
 @pytest.mark.asyncio
 async def test_get_random_list_unknown_code(client, tmp_path, monkeypatch):
     monkeypatch.setattr("app.services.lantern.UPLOAD_DIR", tmp_path)
-    monkeypatch.setattr("app.routers.lantern.process_mood_analysis", lambda code: None)
 
     for i in range(5):
         await client.post("/api/v1/lanterns", files=make_images(3), data={"name": f"랜턴{i}"})
@@ -159,7 +159,6 @@ async def test_get_random_list_unknown_code(client, tmp_path, monkeypatch):
 @pytest.mark.asyncio
 async def test_get_random_list_capped_at_20(client, tmp_path, monkeypatch):
     monkeypatch.setattr("app.services.lantern.UPLOAD_DIR", tmp_path)
-    monkeypatch.setattr("app.routers.lantern.process_mood_analysis", lambda code: None)
 
     res = await client.post("/api/v1/lanterns", files=make_images(3), data={"name": "내 랜턴"})
     assert res.status_code == 201
