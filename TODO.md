@@ -20,7 +20,7 @@
 #### schemas
 
 - [x] LanternCreateResponse: lantern_code, name, status
-- [ ] LanternDetailResponse: lantern_code, name, image_paths, background_music, status, created_at
+- [x] LanternDetailResponse: lantern_code, name, image_paths, background_music, status, created_at
 - [ ] LanternListItem: lantern_code, name, image_paths, background_music, is_mine
 - [ ] LanternRandomListResponse: items: list[LanternListItem]
 
