@@ -68,11 +68,11 @@ async def get_random_list(lantern_code: str) -> LanternRandomListResponse:
     if my_lantern is not None:
         others = await Lantern.find(Lantern.lantern_code != lantern_code).to_list()
         sample = random.sample(others, min(19, len(others)))
-        all_items = [_to_list_item(my_lantern, is_mine=True)] + [_to_list_item(l, is_mine=False) for l in sample]
+        all_items = [_to_list_item(my_lantern, is_mine=True)] + [_to_list_item(lantern, is_mine=False) for lantern in sample]
     else:
         all_docs = await Lantern.find_all().to_list()
         sample = random.sample(all_docs, min(20, len(all_docs)))
-        all_items = [_to_list_item(l, is_mine=False) for l in sample]
+        all_items = [_to_list_item(lantern, is_mine=False) for lantern in sample]
 
     random.shuffle(all_items)
     return LanternRandomListResponse(total=len(all_items), items=all_items)
