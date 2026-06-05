@@ -1,5 +1,4 @@
 from datetime import datetime
-from typing import Optional
 
 from pydantic import BaseModel
 
@@ -16,6 +15,6 @@ class LanternDetailResponse(BaseModel):
     lantern_code: str
     name: str
     image_paths: list[str]
-    background_music: Optional[str] = None
+    background_music: str | None = None
     status: LanternStatus
     created_at: datetime
