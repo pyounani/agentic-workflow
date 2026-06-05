@@ -9,6 +9,8 @@ Write commit messages in English using Conventional Commits:
 - `docs:` documentation
 - `test:` tests
 
+PR은 **Squash merge**로 머지한다.
+
 ## Commands
 
 ```bash
