@@ -43,7 +43,7 @@
 - [x] tests/test_lantern.py 작성: create → get → random-list 흐름 단위 테스트 (mongomock)
 - [x] uv run pytest -v — 전체 테스트 통과 확인
 
-### 비동기 + SSE
+### 비동기 (Celery + Redis)
 
 #### API 서버 (Celery + Redis)
 
@@ -51,14 +51,24 @@
 - [x] Redis 서비스 docker-compose.yml에 추가
 - [x] Celery 워커 서비스 docker-compose.yml에 추가 (--concurrency=1 — AI 서버 동시 호출 방지)
 - [x] app/celery_app.py 생성 — Celery 인스턴스 및 LLM 추론 태스크 정의
-- [x] worker_prefetch_multiplier = 1 설정 (작업 미리 가져오기 금지)
-- [x] task_soft_time_limit = 40, task_time_limit = 60 설정 (전체 파이프라인 실측 30초 기준)
-- [x] task_acks_late = True (작업 완료 후 ACK, 크래시 시 재큐)
-- [x] task_reject_on_worker_lost = True (워커 유실 시 작업 재큐)
-- [x] worker_max_tasks_per_child = 50
-- [x] result_expires = 300 (완료 즉시 MongoDB에 저장되므로 5분으로 충분)
-- [x] 단일 큐 사용 (큐 분리 실익 없음 — 멀티 AI 서버 스케일아웃 시점에 재검토)
-- [x] Redis maxmemory 128mb, maxmemory-policy volatile-lru 설정 (브로커 메시지 보호, 결과값만 LRU 제거)
-- [x] AI 서버 단일 엔드포인트 호출로 단순화 (무드→캡션→BGM 내부 처리, API 서버는 BGM 경로만 수신)
+  - [x] worker_prefetch_multiplier = 1 설정 (작업 미리 가져오기 금지)
+  - [x] task_soft_time_limit = 40, task_time_limit = 60 설정 (전체 파이프라인 실측 30초 기준)
+  - [x] task_acks_late = True (작업 완료 후 ACK, 크래시 시 재큐)
+  - [x] task_reject_on_worker_lost = True (워커 유실 시 작업 재큐)
+  - [x] worker_max_tasks_per_child = 50
+  - [x] result_expires = 300 (완료 즉시 MongoDB에 저장되므로 5분으로 충분)
+  - [x] 단일 큐 사용 (큐 분리 실익 없음 — 멀티 AI 서버 스케일아웃 시점에 재검토)
+  - [x] Redis maxmemory 128mb, maxmemory-policy volatile-lru 설정 (브로커 메시지 보호, 결과값만 LRU 제거)
+  - [x] AI 서버 단일 엔드포인트 호출로 단순화 (무드→캡션→BGM 내부 처리, API 서버는 BGM 경로만 수신)
 - [x] process_mood_analysis BackgroundTasks → Celery task로 교체
+
+### SSE
+
 - [ ] SSE 엔드포인트 추가 — GET /lanterns/{lantern_code}/status/stream
+  - [ ] poll_interval = 2초 — MongoDB 상태 폴링 간격 (파이프라인 30~60초 기준, 적절한 응답성)
+  - [ ] connection_timeout = 120초 — SSE 연결 최대 유지 시간 (process time_limit 60 + finalize time_limit 30 + 여유 30초)
+  - [ ] keepalive_interval = 15초 — `:ping` 코멘트 전송 간격 (nginx default read timeout 60초보다 충분히 짧게)
+  - [ ] retry: 3000 (ms) — SSE 스펙 `retry:` 필드, 클라이언트 재연결 대기 시간
+  - [ ] 응답 헤더: `Content-Type: text/event-stream`, `Cache-Control: no-cache`, `X-Accel-Buffering: no`, `Connection: keep-alive`
+  - [ ] 종료 조건: status == COMPLETED 또는 FAILED 시 스트림 close
+  - [ ] 404 처리: lantern_code 없으면 즉시 스트림 종료 (error 이벤트 후 close)
