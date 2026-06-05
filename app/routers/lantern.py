@@ -2,7 +2,7 @@ from fastapi import APIRouter, File, Form, UploadFile
 
 from app.exceptions import ValidationException
 from app.schemas.lantern import LanternCreateResponse, LanternDetailResponse, LanternRandomListResponse
-from app.services.lantern import create_lantern, dispatch_mood_pipeline, get_lantern, get_random_list
+from app.services.lantern import create_lantern, dispatch_pipeline, get_lantern, get_random_list
 
 router = APIRouter(prefix="/lanterns", tags=["lanterns"])
 
@@ -28,5 +28,5 @@ async def post_lantern(
         if not image.content_type or not image.content_type.startswith("image/"):
             raise ValidationException(f"File '{image.filename}' is not an image")
     response = await create_lantern(name, images)
-    dispatch_mood_pipeline(response.lantern_code)
+    dispatch_pipeline(response.lantern_code)
     return response

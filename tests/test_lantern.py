@@ -11,7 +11,7 @@ def make_images(n=3):
 async def test_create_lantern_success(client, tmp_path, monkeypatch):
     monkeypatch.setattr("app.services.lantern.UPLOAD_DIR", tmp_path)
     dispatched = []
-    monkeypatch.setattr("app.routers.lantern.dispatch_mood_pipeline", lambda code: dispatched.append(code))
+    monkeypatch.setattr("app.routers.lantern.dispatch_pipeline", lambda code: dispatched.append(code))
     res = await client.post(
         "/api/v1/lanterns",
         files=make_images(3),

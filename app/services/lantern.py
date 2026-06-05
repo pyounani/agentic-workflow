@@ -86,4 +86,4 @@ async def get_random_list(lantern_code: str) -> LanternRandomListResponse:
     return LanternRandomListResponse(total=len(all_items), items=all_items)
 
 
-from app.tasks.lantern import dispatch_mood_pipeline as dispatch_mood_pipeline  # noqa: F401
+from app.tasks.lantern import dispatch_pipeline as dispatch_pipeline  # noqa: F401
