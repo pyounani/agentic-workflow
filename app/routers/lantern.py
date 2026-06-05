@@ -1,10 +1,15 @@
 from fastapi import APIRouter, BackgroundTasks, File, Form, UploadFile
 
 from app.exceptions import ValidationException
-from app.schemas.lantern import LanternCreateResponse, LanternDetailResponse
-from app.services.lantern import create_lantern, get_lantern, process_mood_analysis
+from app.schemas.lantern import LanternCreateResponse, LanternDetailResponse, LanternRandomListResponse
+from app.services.lantern import create_lantern, get_lantern, get_random_list, process_mood_analysis
 
 router = APIRouter(prefix="/lanterns", tags=["lanterns"])
+
+
+@router.get("/{lantern_code}/random-list", response_model=LanternRandomListResponse, status_code=200)
+async def get_random_list_endpoint(lantern_code: str) -> LanternRandomListResponse:
+    return await get_random_list(lantern_code)
 
 
 @router.get("/{lantern_code}", response_model=LanternDetailResponse, status_code=200)
