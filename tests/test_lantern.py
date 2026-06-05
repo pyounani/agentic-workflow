@@ -110,3 +110,4 @@ async def test_get_lantern_success(client, tmp_path, monkeypatch):
 async def test_get_lantern_not_found(client):
     res = await client.get("/api/v1/lanterns/non-existent-code")
     assert res.status_code == 404
+    assert res.json()["detail"] == "Lantern 'non-existent-code' not found"

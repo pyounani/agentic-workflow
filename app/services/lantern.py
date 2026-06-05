@@ -47,7 +47,7 @@ async def create_lantern(name: str, images: list[UploadFile]) -> LanternCreateRe
 async def get_lantern(lantern_code: str) -> LanternDetailResponse:
     lantern = await Lantern.find_one(Lantern.lantern_code == lantern_code)
     if lantern is None:
-        raise NotFoundException()
+        raise NotFoundException(detail=f"Lantern '{lantern_code}' not found")
     return LanternDetailResponse.model_validate(lantern)
 
 
