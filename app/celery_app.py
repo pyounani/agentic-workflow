@@ -26,18 +26,17 @@ celery_app.conf.update(
 )
 
 _loop: asyncio.AbstractEventLoop | None = None
-_db_client = None
 
 
 @worker_process_init.connect
 def init_worker(**kwargs):
-    global _loop, _db_client
+    global _loop
     from app.database import init_db
     from app.models import all_models
 
     _loop = asyncio.new_event_loop()
     asyncio.set_event_loop(_loop)
-    _db_client = _loop.run_until_complete(init_db(all_models))
+    _loop.run_until_complete(init_db(all_models))
     logger.info("Celery worker DB initialized")
 
 
