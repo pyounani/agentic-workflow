@@ -6,6 +6,8 @@ from app.enums import LanternStatus
 
 
 class LanternCreateResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     lantern_code: str
     name: str
     status: LanternStatus
