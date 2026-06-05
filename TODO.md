@@ -49,7 +49,7 @@
 
 - [x] celery, redis 의존성 추가 (pyproject.toml)
 - [x] Redis 서비스 docker-compose.yml에 추가
-- [x] Celery 워커 서비스 docker-compose.yml에 추가
+- [x] Celery 워커 서비스 docker-compose.yml에 추가 (--concurrency=2 유지 — AI 서버에 HTTP 호출만 하는 I/O bound 태스크, GPU 직접 사용 안 함)
 - [x] app/celery_app.py 생성 — Celery 인스턴스 및 LLM 추론 태스크 정의
 - [x] process_mood_analysis BackgroundTasks → Celery task로 교체
 - [ ] SSE 엔드포인트 추가 — GET /lanterns/{lantern_code}/status/stream
@@ -57,13 +57,13 @@
 #### AI 서버 (Celery + Redis)
 
 - [ ] Celery 설치 및 celery.py 설정 파일 생성
-- [ ] worker_concurrency = 1 설정 (GPU 1개당 워커 1개, VRAM OOM 방지)
+- [ ] worker_concurrency = 1 설정 (GPU 모델 직접 실행, VRAM 8GB 기준 OOM 방지 — API 서버 워커와 다름)
 - [ ] worker_prefetch_multiplier = 1 설정 (작업 미리 가져오기 금지)
-- [ ] task_time_limit / task_soft_time_limit 설정 (모델별 측정 후 결정)
-- [ ] task_acks_late = True (작업 완료 후 ACK, 크래시 시 재큐)
-- [ ] task_reject_on_worker_lost = True (워커 유실 시 작업 재큐)
-- [ ] worker_max_tasks_per_child = 200 (GPU 메모리 누수 방지용 워커 재시작)
-- [ ] result_expires = 3600 (Redis 결과 1시간 후 만료)
-- [ ] 큐 분리 — yolo 큐 / musicgen 큐 각각 정의
-- [ ] Celery chain으로 YOLO → MusicGen 파이프라인 구성
-- [ ] Redis maxmemory, maxmemory-policy allkeys-lru 설정
+- [x] task_soft_time_limit = 40, task_time_limit = 60 설정 (mood/bgm 공통, 전체 파이프라인 실측 30초 기준)
+- [x] task_acks_late = True (작업 완료 후 ACK, 크래시 시 재큐)
+- [x] task_reject_on_worker_lost = True (워커 유실 시 작업 재큐)
+- [x] worker_max_tasks_per_child = 50 (MusicGen 오토리그레시브 단편화 고려, 8GB VRAM 기준 — 실측 후 조정)
+- [x] result_expires = 300 (파이프라인 완료 후 디버깅 여유분, 완료 즉시 MongoDB에 저장되므로 5분으로 충분)
+- [x] 단일 큐 사용 (AI 서버 단일, 큐 분리 실익 없음 — 멀티 AI 서버 스케일아웃 시점에 재검토)
+- [x] AI 서버 단일 엔드포인트 호출로 단순화 (무드→캡션→BGM 내부 처리, API 서버는 BGM 경로만 수신)
+- [x] Redis maxmemory 128mb, maxmemory-policy volatile-lru 설정 (브로커 메시지 보호, 결과값만 LRU 제거)
