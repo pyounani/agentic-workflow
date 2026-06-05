@@ -84,3 +84,29 @@ async def test_create_lantern_non_image_file(client):
         data={"name": "테스트"},
     )
     assert res.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_get_lantern_success(client, tmp_path, monkeypatch):
+    monkeypatch.setattr("app.services.lantern.UPLOAD_DIR", tmp_path)
+    create_res = await client.post(
+        "/api/v1/lanterns",
+        files=make_images(3),
+        data={"name": "조회 랜턴"},
+    )
+    assert create_res.status_code == 201
+    lantern_code = create_res.json()["lantern_code"]
+
+    res = await client.get(f"/api/v1/lanterns/{lantern_code}")
+    assert res.status_code == 200
+    data = res.json()
+    assert data["lantern_code"] == lantern_code
+    assert data["name"] == "조회 랜턴"
+    assert data["status"] in ("pending", "completed")
+    assert len(data["image_paths"]) == 3
+
+
+@pytest.mark.asyncio
+async def test_get_lantern_not_found(client):
+    res = await client.get("/api/v1/lanterns/non-existent-code")
+    assert res.status_code == 404

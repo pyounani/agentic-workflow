@@ -7,8 +7,9 @@ from fastapi import UploadFile
 
 from app.decorators import log_ai_task
 from app.enums import LanternStatus
+from app.exceptions import NotFoundException
 from app.models.lantern import Lantern
-from app.schemas.lantern import LanternCreateResponse
+from app.schemas.lantern import LanternCreateResponse, LanternDetailResponse
 
 UPLOAD_DIR = Path(__file__).parent.parent.parent / "uploads" / "lanterns"
 
@@ -41,6 +42,13 @@ async def create_lantern(name: str, images: list[UploadFile]) -> LanternCreateRe
         name=lantern.name,
         status=lantern.status,
     )
+
+
+async def get_lantern(lantern_code: str) -> LanternDetailResponse:
+    lantern = await Lantern.find_one(Lantern.lantern_code == lantern_code)
+    if lantern is None:
+        raise NotFoundException()
+    return LanternDetailResponse.model_validate(lantern)
 
 
 @log_ai_task
