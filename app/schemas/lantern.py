@@ -37,4 +37,5 @@ class LanternListItem(BaseModel):
 class LanternRandomListResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
+    total: int
     items: list[LanternListItem]
