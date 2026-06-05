@@ -42,3 +42,28 @@
 
 - [x] tests/test_lantern.py 작성: create → get → random-list 흐름 단위 테스트 (mongomock)
 - [x] uv run pytest -v — 전체 테스트 통과 확인
+
+### 비동기 + SSE
+
+#### API 서버 (Celery + Redis)
+
+- [x] celery, redis 의존성 추가 (pyproject.toml)
+- [x] Redis 서비스 docker-compose.yml에 추가
+- [x] Celery 워커 서비스 docker-compose.yml에 추가
+- [x] app/celery_app.py 생성 — Celery 인스턴스 및 LLM 추론 태스크 정의
+- [x] process_mood_analysis BackgroundTasks → Celery task로 교체
+- [ ] SSE 엔드포인트 추가 — GET /lanterns/{lantern_code}/status/stream
+
+#### AI 서버 (Celery + Redis)
+
+- [ ] Celery 설치 및 celery.py 설정 파일 생성
+- [ ] worker_concurrency = 1 설정 (GPU 1개당 워커 1개, VRAM OOM 방지)
+- [ ] worker_prefetch_multiplier = 1 설정 (작업 미리 가져오기 금지)
+- [ ] task_time_limit / task_soft_time_limit 설정 (모델별 측정 후 결정)
+- [ ] task_acks_late = True (작업 완료 후 ACK, 크래시 시 재큐)
+- [ ] task_reject_on_worker_lost = True (워커 유실 시 작업 재큐)
+- [ ] worker_max_tasks_per_child = 200 (GPU 메모리 누수 방지용 워커 재시작)
+- [ ] result_expires = 3600 (Redis 결과 1시간 후 만료)
+- [ ] 큐 분리 — yolo 큐 / musicgen 큐 각각 정의
+- [ ] Celery chain으로 YOLO → MusicGen 파이프라인 구성
+- [ ] Redis maxmemory, maxmemory-policy allkeys-lru 설정
