@@ -42,6 +42,12 @@ def _patch_mongomock_compat():
     mongomock.Database.list_collection_names = _orig
 
 
+@pytest.fixture(autouse=True)
+def _mock_dispatch_pipeline(monkeypatch):
+    """모든 테스트에서 Celery pipeline 실행을 막아 Redis 연결 시도를 차단."""
+    monkeypatch.setattr("app.routers.lantern.dispatch_mood_pipeline", lambda code: None)
+
+
 @pytest.fixture
 async def client():
     mock_motor_client = AsyncMongoMockClient()
