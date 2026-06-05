@@ -11,6 +11,14 @@ logger = logging.getLogger(__name__)
 
 # ── async 헬퍼 (실제 AI/DB 작업) ──
 
+async def _set_processing(lantern_code: str) -> None:
+    lantern = await Lantern.find_one(Lantern.lantern_code == lantern_code)
+    if lantern is None:
+        return
+    lantern.status = LanternStatus.PROCESSING
+    await lantern.save()
+
+
 async def _process_pipeline(lantern_code: str) -> str:
     # TODO: httpx로 AI 서버 POST /process 호출 → bgm_path 반환
     return f"bgm_{lantern_code}.mp3"
@@ -43,6 +51,7 @@ async def _save_failed(lantern_code: str) -> None:
 def process_pipeline_task(self, lantern_code: str) -> str:
     logger.info("[process_pipeline] start: %s", lantern_code)
     try:
+        get_loop().run_until_complete(_set_processing(lantern_code))
         result = get_loop().run_until_complete(_process_pipeline(lantern_code))
         logger.info("[process_pipeline] done: %s -> %s", lantern_code, result)
         return result
