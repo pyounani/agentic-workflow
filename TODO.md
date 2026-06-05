@@ -21,8 +21,8 @@
 
 - [x] LanternCreateResponse: lantern_code, name, status
 - [x] LanternDetailResponse: lantern_code, name, image_paths, background_music, status, created_at
-- [ ] LanternListItem: lantern_code, name, image_paths, background_music, is_mine
-- [ ] LanternRandomListResponse: items: list[LanternListItem]
+- [x] LanternListItem: lantern_code, name, image_paths, background_music, is_mine
+- [x] LanternRandomListResponse: items: list[LanternListItem]
 
 #### service
 

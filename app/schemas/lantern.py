@@ -22,3 +22,19 @@ class LanternDetailResponse(BaseModel):
     background_music: str | None = None
     status: LanternStatus
     created_at: datetime
+
+
+class LanternListItem(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    lantern_code: str
+    name: str
+    image_paths: list[str]
+    background_music: str | None = None
+    is_mine: bool
+
+
+class LanternRandomListResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    items: list[LanternListItem]
