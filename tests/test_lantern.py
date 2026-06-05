@@ -112,3 +112,66 @@ async def test_get_lantern_not_found(client):
     res = await client.get("/api/v1/lanterns/non-existent-code")
     assert res.status_code == 404
     assert res.json()["detail"] == "Lantern 'non-existent-code' not found"
+
+
+@pytest.mark.asyncio
+async def test_get_random_list_success(client, tmp_path, monkeypatch):
+    monkeypatch.setattr("app.services.lantern.UPLOAD_DIR", tmp_path)
+    monkeypatch.setattr("app.routers.lantern.process_mood_analysis", lambda code: None)
+
+    res = await client.post("/api/v1/lanterns", files=make_images(3), data={"name": "내 랜턴"})
+    assert res.status_code == 201
+    my_code = res.json()["lantern_code"]
+
+    for i in range(5):
+        await client.post("/api/v1/lanterns", files=make_images(3), data={"name": f"다른 랜턴{i}"})
+
+    res = await client.get(f"/api/v1/lanterns/{my_code}/random-list")
+    assert res.status_code == 200
+    data = res.json()
+
+    assert data["total"] == 6
+    assert len(data["items"]) == 6
+    assert data["total"] == len(data["items"])
+
+    mine_items = [item for item in data["items"] if item["is_mine"]]
+    assert len(mine_items) == 1
+    assert mine_items[0]["lantern_code"] == my_code
+
+
+@pytest.mark.asyncio
+async def test_get_random_list_unknown_code(client, tmp_path, monkeypatch):
+    monkeypatch.setattr("app.services.lantern.UPLOAD_DIR", tmp_path)
+    monkeypatch.setattr("app.routers.lantern.process_mood_analysis", lambda code: None)
+
+    for i in range(5):
+        await client.post("/api/v1/lanterns", files=make_images(3), data={"name": f"랜턴{i}"})
+
+    res = await client.get("/api/v1/lanterns/non-existent-code/random-list")
+    assert res.status_code == 200
+    data = res.json()
+
+    assert data["total"] == 5
+    assert len(data["items"]) == 5
+    assert all(not item["is_mine"] for item in data["items"])
+
+
+@pytest.mark.asyncio
+async def test_get_random_list_capped_at_20(client, tmp_path, monkeypatch):
+    monkeypatch.setattr("app.services.lantern.UPLOAD_DIR", tmp_path)
+    monkeypatch.setattr("app.routers.lantern.process_mood_analysis", lambda code: None)
+
+    res = await client.post("/api/v1/lanterns", files=make_images(3), data={"name": "내 랜턴"})
+    assert res.status_code == 201
+    my_code = res.json()["lantern_code"]
+
+    for i in range(25):
+        await client.post("/api/v1/lanterns", files=make_images(3), data={"name": f"랜턴{i}"})
+
+    res = await client.get(f"/api/v1/lanterns/{my_code}/random-list")
+    assert res.status_code == 200
+    data = res.json()
+
+    assert data["total"] == 20
+    assert len(data["items"]) == 20
+    assert any(item["lantern_code"] == my_code for item in data["items"])
