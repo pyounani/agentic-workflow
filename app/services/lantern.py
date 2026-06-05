@@ -6,7 +6,6 @@ from uuid import uuid4
 
 from fastapi import UploadFile
 
-from app.decorators import log_ai_task
 from app.enums import LanternStatus
 from app.exceptions import NotFoundException
 from app.models.lantern import Lantern
@@ -87,11 +86,4 @@ async def get_random_list(lantern_code: str) -> LanternRandomListResponse:
     return LanternRandomListResponse(total=len(all_items), items=all_items)
 
 
-@log_ai_task
-async def process_mood_analysis(lantern_code: str) -> None:
-    lantern = await Lantern.find_one(Lantern.lantern_code == lantern_code)
-    if lantern is None:
-        return
-    lantern.background_music = "default_bgm.mp3"
-    lantern.status = LanternStatus.COMPLETED
-    await lantern.save()
+from app.tasks.lantern import dispatch_mood_pipeline as dispatch_mood_pipeline  # noqa: F401
