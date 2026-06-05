@@ -16,6 +16,6 @@ class LanternDetailResponse(BaseModel):
     lantern_code: str
     name: str
     image_paths: list[str]
-    background_music: Optional[str]
+    background_music: Optional[str] = None
     status: LanternStatus
     created_at: datetime
