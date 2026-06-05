@@ -89,6 +89,7 @@ async def test_create_lantern_non_image_file(client):
 @pytest.mark.asyncio
 async def test_get_lantern_success(client, tmp_path, monkeypatch):
     monkeypatch.setattr("app.services.lantern.UPLOAD_DIR", tmp_path)
+    monkeypatch.setattr("app.routers.lantern.process_mood_analysis", lambda code: None)
     create_res = await client.post(
         "/api/v1/lanterns",
         files=make_images(3),
@@ -102,7 +103,7 @@ async def test_get_lantern_success(client, tmp_path, monkeypatch):
     data = res.json()
     assert data["lantern_code"] == lantern_code
     assert data["name"] == "조회 랜턴"
-    assert data["status"] in ("pending", "completed")
+    assert data["status"] == "pending"
     assert len(data["image_paths"]) == 3
 
 
