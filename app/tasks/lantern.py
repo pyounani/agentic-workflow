@@ -1,8 +1,10 @@
 import logging
 
+import httpx
 from celery import chain, shared_task
 
 from app.celery_app import get_loop
+from app.config import settings
 from app.enums import LanternStatus
 from app.models.lantern import Lantern
 
@@ -20,8 +22,13 @@ async def _set_processing(lantern_code: str) -> None:
 
 
 async def _process_pipeline(lantern_code: str) -> str:
-    # TODO: httpx로 AI 서버 POST /process 호출 → bgm_path 반환
-    return f"bgm_{lantern_code}.mp3"
+    async with httpx.AsyncClient(timeout=50.0) as client:
+        response = await client.post(
+            f"{settings.AI_SERVER_URL}/process",
+            json={"lantern_code": lantern_code},
+        )
+        response.raise_for_status()
+        return response.json()["bgm_path"]
 
 
 async def _save_completed(bgm_path: str, lantern_code: str) -> None:
