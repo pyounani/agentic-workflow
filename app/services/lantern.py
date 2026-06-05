@@ -1,4 +1,5 @@
 import asyncio
+import random
 import shutil
 from pathlib import Path
 from uuid import uuid4
@@ -9,7 +10,7 @@ from app.decorators import log_ai_task
 from app.enums import LanternStatus
 from app.exceptions import NotFoundException
 from app.models.lantern import Lantern
-from app.schemas.lantern import LanternCreateResponse, LanternDetailResponse
+from app.schemas.lantern import LanternCreateResponse, LanternDetailResponse, LanternListItem, LanternRandomListResponse
 
 UPLOAD_DIR = Path(__file__).parent.parent.parent / "uploads" / "lanterns"
 
@@ -49,6 +50,32 @@ async def get_lantern(lantern_code: str) -> LanternDetailResponse:
     if lantern is None:
         raise NotFoundException(detail=f"Lantern '{lantern_code}' not found")
     return LanternDetailResponse.model_validate(lantern)
+
+
+def _to_list_item(lantern: Lantern, is_mine: bool) -> LanternListItem:
+    return LanternListItem(
+        lantern_code=lantern.lantern_code,
+        name=lantern.name,
+        image_paths=lantern.image_paths,
+        background_music=lantern.background_music,
+        is_mine=is_mine,
+    )
+
+
+async def get_random_list(lantern_code: str) -> LanternRandomListResponse:
+    my_lantern = await Lantern.find_one(Lantern.lantern_code == lantern_code)
+
+    if my_lantern is not None:
+        others = await Lantern.find(Lantern.lantern_code != lantern_code).to_list()
+        sample = random.sample(others, min(19, len(others)))
+        all_items = [_to_list_item(my_lantern, is_mine=True)] + [_to_list_item(l, is_mine=False) for l in sample]
+    else:
+        all_docs = await Lantern.find_all().to_list()
+        sample = random.sample(all_docs, min(20, len(all_docs)))
+        all_items = [_to_list_item(l, is_mine=False) for l in sample]
+
+    random.shuffle(all_items)
+    return LanternRandomListResponse(total=len(all_items), items=all_items)
 
 
 @log_ai_task
