@@ -3,6 +3,8 @@ import logging
 from celery import chain, shared_task
 
 from app.celery_app import get_loop
+from app.enums import LanternStatus
+from app.models.lantern import Lantern
 
 logger = logging.getLogger(__name__)
 
@@ -15,9 +17,6 @@ async def _process_pipeline(lantern_code: str) -> str:
 
 
 async def _save_completed(bgm_path: str, lantern_code: str) -> None:
-    from app.enums import LanternStatus
-    from app.models.lantern import Lantern
-
     lantern = await Lantern.find_one(Lantern.lantern_code == lantern_code)
     if lantern is None:
         return
@@ -27,9 +26,6 @@ async def _save_completed(bgm_path: str, lantern_code: str) -> None:
 
 
 async def _save_failed(lantern_code: str) -> None:
-    from app.enums import LanternStatus
-    from app.models.lantern import Lantern
-
     lantern = await Lantern.find_one(Lantern.lantern_code == lantern_code)
     if lantern is None:
         return
