@@ -84,6 +84,3 @@ async def get_random_list(lantern_code: str) -> LanternRandomListResponse:
 
     random.shuffle(all_items)
     return LanternRandomListResponse(total=len(all_items), items=all_items)
-
-
-from app.tasks.lantern import dispatch_pipeline as dispatch_pipeline  # noqa: F401

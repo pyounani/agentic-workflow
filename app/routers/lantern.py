@@ -2,7 +2,8 @@ from fastapi import APIRouter, File, Form, UploadFile
 
 from app.exceptions import ValidationException
 from app.schemas.lantern import LanternCreateResponse, LanternDetailResponse, LanternRandomListResponse
-from app.services.lantern import create_lantern, dispatch_pipeline, get_lantern, get_random_list
+from app.services.lantern import create_lantern, get_lantern, get_random_list
+from app.tasks.lantern import dispatch_pipeline
 
 router = APIRouter(prefix="/lanterns", tags=["lanterns"])
 
