@@ -56,12 +56,28 @@ async def test_save_failed_updates_status(db_lantern):
 
 
 def test_process_pipeline_task_success():
+    mock_lantern = MagicMock()
+    mock_lantern.status = LanternStatus.PENDING
+
     mock_loop = MagicMock()
-    mock_loop.run_until_complete.side_effect = [None, "bgm_abc.mp3"]
+    mock_loop.run_until_complete.side_effect = [mock_lantern, None, "bgm_abc.mp3"]
     with patch("app.tasks.lantern.get_loop", return_value=mock_loop):
         result = process_pipeline_task.apply(args=["abc"]).get()
     assert result == "bgm_abc.mp3"
-    assert mock_loop.run_until_complete.call_count == 2
+    assert mock_loop.run_until_complete.call_count == 3
+
+
+def test_process_pipeline_task_skips_if_completed():
+    mock_lantern = MagicMock()
+    mock_lantern.status = LanternStatus.COMPLETED
+    mock_lantern.background_music = "existing_bgm.mp3"
+
+    mock_loop = MagicMock()
+    mock_loop.run_until_complete.return_value = mock_lantern
+    with patch("app.tasks.lantern.get_loop", return_value=mock_loop):
+        result = process_pipeline_task.apply(args=["abc"]).get()
+    assert result == "existing_bgm.mp3"
+    assert mock_loop.run_until_complete.call_count == 1
 
 
 def test_process_pipeline_task_retries_on_error():

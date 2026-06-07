@@ -51,15 +51,23 @@ async def _save_failed(lantern_code: str) -> None:
 # ── Celery Tasks ──
 
 @shared_task(
-    bind=True, max_retries=3, default_retry_delay=10,
+    bind=True, max_retries=3, default_retry_delay=30,
     name="tasks.process_pipeline",
     soft_time_limit=40, time_limit=60,
 )
 def process_pipeline_task(self, lantern_code: str) -> str:
     logger.info("[process_pipeline] start: %s", lantern_code)
+    loop = get_loop()
     try:
-        get_loop().run_until_complete(_set_processing(lantern_code))
-        result = get_loop().run_until_complete(_process_pipeline(lantern_code))
+        lantern = loop.run_until_complete(
+            Lantern.find_one(Lantern.lantern_code == lantern_code)
+        )
+        if lantern and lantern.status == LanternStatus.COMPLETED:
+            logger.info("[process_pipeline] already completed, skipping: %s", lantern_code)
+            return lantern.background_music
+
+        loop.run_until_complete(_set_processing(lantern_code))
+        result = loop.run_until_complete(_process_pipeline(lantern_code))
         logger.info("[process_pipeline] done: %s -> %s", lantern_code, result)
         return result
     except Exception as exc:
