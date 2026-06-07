@@ -39,3 +39,7 @@ class LanternRandomListResponse(BaseModel):
 
     total: int
     items: list[LanternListItem]
+
+
+class LanternStatusEvent(BaseModel):
+    status: LanternStatus

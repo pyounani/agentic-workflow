@@ -64,11 +64,11 @@
 
 ### SSE
 
-- [ ] SSE 엔드포인트 추가 — GET /lanterns/{lantern_code}/status/stream
-  - [ ] poll_interval = 2초 — MongoDB 상태 폴링 간격 (파이프라인 30~60초 기준, 적절한 응답성)
-  - [ ] connection_timeout = 120초 — SSE 연결 최대 유지 시간 (process time_limit 60 + finalize time_limit 30 + 여유 30초)
-  - [ ] keepalive_interval = 15초 — `:ping` 코멘트 전송 간격 (nginx default read timeout 60초보다 충분히 짧게)
-  - [ ] retry: 3000 (ms) — SSE 스펙 `retry:` 필드, 클라이언트 재연결 대기 시간
-  - [ ] 응답 헤더: `Content-Type: text/event-stream`, `Cache-Control: no-cache`, `X-Accel-Buffering: no`, `Connection: keep-alive`
-  - [ ] 종료 조건: status == COMPLETED 또는 FAILED 시 스트림 close
-  - [ ] 404 처리: lantern_code 없으면 즉시 스트림 종료 (error 이벤트 후 close)
+- [x] SSE 엔드포인트 추가 — GET /lanterns/{lantern_code}/status/stream
+  - [x] poll_interval = 2초 — MongoDB 상태 폴링 간격 (파이프라인 30~60초 기준, 적절한 응답성)
+  - [x] connection_timeout = 150초 — SSE 연결 최대 유지 시간 (process time_limit 60 + retry 1회 시 130초 → 여유 포함 150초)
+  - [x] keepalive_interval = 15초 — `:ping` 코멘트 전송 간격 (nginx default read timeout 60초보다 충분히 짧게)
+  - [x] retry: 3000 (ms) — SSE 스펙 `retry:` 필드, 클라이언트 재연결 대기 시간
+  - [x] 응답 헤더: `Content-Type: text/event-stream`, `Cache-Control: no-cache`, `X-Accel-Buffering: no`, `Connection: keep-alive`
+  - [x] 종료 조건: status == COMPLETED 또는 FAILED 시 스트림 close
+  - [x] 404 처리: lantern_code 없으면 즉시 스트림 종료 (error 이벤트 후 close)
