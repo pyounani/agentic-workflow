@@ -2,7 +2,6 @@ import asyncio
 import json
 import random
 import shutil
-from asyncio import get_event_loop
 from collections.abc import AsyncGenerator
 from pathlib import Path
 from uuid import uuid4
@@ -76,11 +75,11 @@ async def stream_lantern_status(lantern_code: str) -> AsyncGenerator[str, None]:
         yield f"event: error\ndata: {json.dumps({'detail': f'Lantern {lantern_code!r} not found'})}\n\n"
         return
 
-    started_at = get_event_loop().time()
+    started_at = asyncio.get_running_loop().time()
     last_ping_at = started_at
 
     while True:
-        now = get_event_loop().time()
+        now = asyncio.get_running_loop().time()
 
         if now - started_at >= _CONNECTION_TIMEOUT:
             yield f"event: error\ndata: {json.dumps({'detail': 'connection timeout'})}\n\n"
