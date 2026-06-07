@@ -2,6 +2,9 @@ import io
 
 import pytest
 
+from app.enums import LanternStatus
+from app.models.lantern import Lantern
+
 
 def make_images(n=3):
     return [("images", (f"{i}.jpg", io.BytesIO(b"fake"), "image/jpeg")) for i in range(n)]
@@ -154,6 +157,83 @@ async def test_get_random_list_unknown_code(client, tmp_path, monkeypatch):
     assert data["total"] == 5
     assert len(data["items"]) == 5
     assert all(not item["is_mine"] for item in data["items"])
+
+
+@pytest.mark.asyncio
+async def test_sse_stream_not_found(client):
+    res = await client.get("/api/v1/lanterns/non-existent-code/status/stream")
+    assert res.status_code == 200
+    assert "text/event-stream" in res.headers["content-type"]
+    text = res.text
+    assert "retry: 3000" in text
+    assert "event: error" in text
+    assert "non-existent-code" in text
+
+
+@pytest.mark.asyncio
+async def test_sse_stream_completed(client, tmp_path, monkeypatch):
+    monkeypatch.setattr("app.services.lantern.UPLOAD_DIR", tmp_path)
+    create_res = await client.post(
+        "/api/v1/lanterns",
+        files=make_images(3),
+        data={"name": "완료 랜턴"},
+    )
+    lantern_code = create_res.json()["lantern_code"]
+
+    lantern = await Lantern.find_one(Lantern.lantern_code == lantern_code)
+    lantern.status = LanternStatus.COMPLETED
+    await lantern.save()
+
+    res = await client.get(f"/api/v1/lanterns/{lantern_code}/status/stream")
+    assert res.status_code == 200
+    text = res.text
+    assert "event: status" in text
+    assert '"status": "completed"' in text
+
+
+@pytest.mark.asyncio
+async def test_sse_stream_failed(client, tmp_path, monkeypatch):
+    monkeypatch.setattr("app.services.lantern.UPLOAD_DIR", tmp_path)
+    create_res = await client.post(
+        "/api/v1/lanterns",
+        files=make_images(3),
+        data={"name": "실패 랜턴"},
+    )
+    lantern_code = create_res.json()["lantern_code"]
+
+    lantern = await Lantern.find_one(Lantern.lantern_code == lantern_code)
+    lantern.status = LanternStatus.FAILED
+    await lantern.save()
+
+    res = await client.get(f"/api/v1/lanterns/{lantern_code}/status/stream")
+    assert res.status_code == 200
+    text = res.text
+    assert "event: status" in text
+    assert '"status": "failed"' in text
+
+
+@pytest.mark.asyncio
+async def test_sse_stream_pending_emits_first_event(client, tmp_path, monkeypatch):
+    """PENDING 랜턴은 첫 status 이벤트를 즉시 emit한다 (루프는 계속되므로 generator 직접 테스트)."""
+    monkeypatch.setattr("app.services.lantern.UPLOAD_DIR", tmp_path)
+    create_res = await client.post(
+        "/api/v1/lanterns",
+        files=make_images(3),
+        data={"name": "대기 랜턴"},
+    )
+    lantern_code = create_res.json()["lantern_code"]
+
+    from app.services.lantern import stream_lantern_status
+
+    events = []
+    async for chunk in stream_lantern_status(lantern_code):
+        events.append(chunk)
+        if len(events) >= 2:  # retry + 첫 status 이벤트 수집 후 중단
+            break
+
+    assert events[0] == "retry: 3000\n\n"
+    assert "event: status" in events[1]
+    assert '"status": "pending"' in events[1]
 
 
 @pytest.mark.asyncio
