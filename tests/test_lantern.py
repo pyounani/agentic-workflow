@@ -213,15 +213,22 @@ async def test_sse_stream_failed(client, tmp_path, monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_sse_stream_pending_emits_first_event(client, tmp_path, monkeypatch):
-    """PENDING 랜턴은 첫 status 이벤트를 즉시 emit한다 (루프는 계속되므로 generator 직접 테스트)."""
+@pytest.mark.parametrize("status,status_str", [
+    (LanternStatus.PENDING, "pending"),
+    (LanternStatus.PROCESSING, "processing"),
+])
+async def test_sse_stream_nonterminal_emits_status(client, tmp_path, monkeypatch, status, status_str):
     monkeypatch.setattr("app.services.lantern.UPLOAD_DIR", tmp_path)
     create_res = await client.post(
         "/api/v1/lanterns",
         files=make_images(3),
-        data={"name": "대기 랜턴"},
+        data={"name": "테스트"},
     )
     lantern_code = create_res.json()["lantern_code"]
+
+    lantern = await Lantern.find_one(Lantern.lantern_code == lantern_code)
+    lantern.status = status
+    await lantern.save()
 
     from app.services.lantern import stream_lantern_status
 
@@ -233,7 +240,29 @@ async def test_sse_stream_pending_emits_first_event(client, tmp_path, monkeypatc
 
     assert events[0] == "retry: 3000\n\n"
     assert "event: status" in events[1]
-    assert '"status":"pending"' in events[1]
+    assert f'"status":"{status_str}"' in events[1]
+
+
+@pytest.mark.asyncio
+async def test_sse_stream_timeout(client, tmp_path, monkeypatch):
+    monkeypatch.setattr("app.services.lantern.UPLOAD_DIR", tmp_path)
+    monkeypatch.setattr("app.services.lantern._CONNECTION_TIMEOUT", 0)
+    monkeypatch.setattr("app.services.lantern._POLL_INTERVAL", 0)
+
+    create_res = await client.post(
+        "/api/v1/lanterns",
+        files=make_images(3),
+        data={"name": "타임아웃 랜턴"},
+    )
+    lantern_code = create_res.json()["lantern_code"]
+
+    from app.services.lantern import stream_lantern_status
+
+    events = []
+    async for chunk in stream_lantern_status(lantern_code):
+        events.append(chunk)
+
+    assert any("event: error" in e and "connection timeout" in e for e in events)
 
 
 @pytest.mark.asyncio
