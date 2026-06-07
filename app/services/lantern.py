@@ -1,6 +1,8 @@
 import asyncio
+import json
 import random
 import shutil
+from collections.abc import AsyncGenerator
 from pathlib import Path
 from uuid import uuid4
 
@@ -9,7 +11,11 @@ from fastapi import UploadFile
 from app.enums import LanternStatus
 from app.exceptions import NotFoundException
 from app.models.lantern import Lantern
-from app.schemas.lantern import LanternCreateResponse, LanternDetailResponse, LanternListItem, LanternRandomListResponse
+from app.schemas.lantern import LanternCreateResponse, LanternDetailResponse, LanternListItem, LanternRandomListResponse, LanternStatusEvent
+
+_POLL_INTERVAL = 2
+_CONNECTION_TIMEOUT = 150
+_KEEPALIVE_INTERVAL = 15
 
 UPLOAD_DIR = Path(__file__).parent.parent.parent / "uploads" / "lanterns"
 
@@ -59,6 +65,36 @@ def _to_list_item(lantern: Lantern, is_mine: bool) -> LanternListItem:
         background_music=lantern.background_music,
         is_mine=is_mine,
     )
+
+
+async def stream_lantern_status(lantern_code: str) -> AsyncGenerator[str, None]:
+    yield "retry: 3000\n\n"
+
+    lantern = await Lantern.find_one(Lantern.lantern_code == lantern_code)
+    if lantern is None:
+        yield f"event: error\ndata: {json.dumps({'detail': f'Lantern {lantern_code!r} not found'})}\n\n"
+        return
+
+    started_at = asyncio.get_running_loop().time()
+    last_ping_at = started_at
+
+    while True:
+        lantern = await Lantern.find_one(Lantern.lantern_code == lantern_code)
+        yield f"event: status\ndata: {LanternStatusEvent(status=lantern.status).model_dump_json()}\n\n"
+
+        if lantern.status in (LanternStatus.COMPLETED, LanternStatus.FAILED):
+            return
+
+        await asyncio.sleep(_POLL_INTERVAL)
+        now = asyncio.get_running_loop().time()
+
+        if now - started_at >= _CONNECTION_TIMEOUT:
+            yield f"event: error\ndata: {json.dumps({'detail': 'connection timeout'})}\n\n"
+            return
+
+        if now - last_ping_at >= _KEEPALIVE_INTERVAL:
+            yield ": ping\n\n"
+            last_ping_at = now
 
 
 async def get_random_list(lantern_code: str) -> LanternRandomListResponse:
