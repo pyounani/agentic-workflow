@@ -79,6 +79,13 @@ async def stream_lantern_status(lantern_code: str) -> AsyncGenerator[str, None]:
     last_ping_at = started_at
 
     while True:
+        lantern = await Lantern.find_one(Lantern.lantern_code == lantern_code)
+        yield f"event: status\ndata: {LanternStatusEvent(status=lantern.status).model_dump_json()}\n\n"
+
+        if lantern.status in (LanternStatus.COMPLETED, LanternStatus.FAILED):
+            return
+
+        await asyncio.sleep(_POLL_INTERVAL)
         now = asyncio.get_running_loop().time()
 
         if now - started_at >= _CONNECTION_TIMEOUT:
@@ -88,14 +95,6 @@ async def stream_lantern_status(lantern_code: str) -> AsyncGenerator[str, None]:
         if now - last_ping_at >= _KEEPALIVE_INTERVAL:
             yield ": ping\n\n"
             last_ping_at = now
-
-        lantern = await Lantern.find_one(Lantern.lantern_code == lantern_code)
-        yield f"event: status\ndata: {LanternStatusEvent(status=lantern.status).model_dump_json()}\n\n"
-
-        if lantern.status in (LanternStatus.COMPLETED, LanternStatus.FAILED):
-            return
-
-        await asyncio.sleep(_POLL_INTERVAL)
 
 
 async def get_random_list(lantern_code: str) -> LanternRandomListResponse:
