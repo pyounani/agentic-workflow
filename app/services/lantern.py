@@ -11,7 +11,7 @@ from fastapi import UploadFile
 from app.enums import LanternStatus
 from app.exceptions import NotFoundException
 from app.models.lantern import Lantern
-from app.schemas.lantern import LanternCreateResponse, LanternDetailResponse, LanternListItem, LanternRandomListResponse
+from app.schemas.lantern import LanternCreateResponse, LanternDetailResponse, LanternListItem, LanternRandomListResponse, LanternStatusEvent
 
 _POLL_INTERVAL = 2
 _CONNECTION_TIMEOUT = 150
@@ -90,7 +90,7 @@ async def stream_lantern_status(lantern_code: str) -> AsyncGenerator[str, None]:
             last_ping_at = now
 
         lantern = await Lantern.find_one(Lantern.lantern_code == lantern_code)
-        yield f"event: status\ndata: {json.dumps({'status': lantern.status.value})}\n\n"
+        yield f"event: status\ndata: {LanternStatusEvent(status=lantern.status).model_dump_json()}\n\n"
 
         if lantern.status in (LanternStatus.COMPLETED, LanternStatus.FAILED):
             return

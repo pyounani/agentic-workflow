@@ -188,7 +188,7 @@ async def test_sse_stream_completed(client, tmp_path, monkeypatch):
     assert res.status_code == 200
     text = res.text
     assert "event: status" in text
-    assert '"status": "completed"' in text
+    assert '"status":"completed"' in text
 
 
 @pytest.mark.asyncio
@@ -209,7 +209,7 @@ async def test_sse_stream_failed(client, tmp_path, monkeypatch):
     assert res.status_code == 200
     text = res.text
     assert "event: status" in text
-    assert '"status": "failed"' in text
+    assert '"status":"failed"' in text
 
 
 @pytest.mark.asyncio
@@ -233,7 +233,7 @@ async def test_sse_stream_pending_emits_first_event(client, tmp_path, monkeypatc
 
     assert events[0] == "retry: 3000\n\n"
     assert "event: status" in events[1]
-    assert '"status": "pending"' in events[1]
+    assert '"status":"pending"' in events[1]
 
 
 @pytest.mark.asyncio
